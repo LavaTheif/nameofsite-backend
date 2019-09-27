@@ -1,0 +1,7 @@
+
+Database Drivers
+(note, you only need the one for the database you are using)
+
+npm i cassandra-driver
+npm i mongoose
+npm i mysql
