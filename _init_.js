@@ -1,5 +1,6 @@
 //Load in the request manager.
 const manager = require('./request_manager');
+const utils = require('./utils');
 
 //initialise logger API to keep track of errors and warnings.
 //This is open sourced at https://github.com/LavaTheif/LavaLogger/ and is written and maintained by me.
@@ -22,21 +23,30 @@ function init(){
         if(req.headers['access-control-request-headers'])//just a request header, don't return content.
             return res.end("");
 
+        if(file === '/API/invalid.json'){
+            //just a little easter egg I guess
+            return res.end(await utils.invalid('So, you wondered if you could request the internal error file?<br>' +
+                'I like your style.'));
+        }
+
         //TODO: here is where the authentication needs to be done.
         //TODO: if a user is logging in, then allow them to not be authenticated yet.
         //TODO: this should be sent in an Authentication header, and not with the payload body
         if(false){//This is when a users session is invalid.
-            return res.end("{\"error\": true, \"message\": \"Please log in. (3FCBE)\"}");
+            return res.end(await utils.invalid('Invalid Session (401)'));
         }
 
         //This will check that the user is requesting /API/*.json
         if(!file.match(/^\/API\/[A-Za-z]+\.json$/)){
             console.log("User requested invalid file.");
-            file = "/API/invalid.json";//not a valid file
+            return res.end(await utils.invalid('Malformed Request (#000)'));
         }
 
         // evaluate and send the payload
-        res.end(await manager.exec(file, logger, req));
+        let data = await manager.exec(file, logger, req);
+        if(typeof data === typeof {})
+            data = JSON.stringify(data);
+        res.end(data);
     };
 
     var server = http.createServer();

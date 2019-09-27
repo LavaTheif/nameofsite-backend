@@ -2,7 +2,7 @@
   "db_type":"cassandra",
   "username":"cassandra",
   "password":"cassandra",
-  "ip":"localhost",
+  "ip":"192.168.0.15",
   "port":"9042",
   "schema":"logs",
 
