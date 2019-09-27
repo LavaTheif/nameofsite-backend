@@ -1,4 +1,4 @@
-let defaults = require('../presets/invalid.json');
+let defaults = require('./presets/invalid.json');
 
 exports.eval = async function(headers, post){
     return new Promise(async function (resolve) {

@@ -11,7 +11,7 @@ WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 3};
 
 USE board_data;
 CREATE TABLE tasks(task_id INT, board_id VARCHAR, title VARCHAR, details VARCHAR, due_date BIGINT, status INT, parent_id INT,
-top_node_id INT, is_top BOOLEAN, PRIMARY KEY ((board_id), task_id));
+top_node_id INT, is_top BOOLEAN, PRIMARY KEY ((board_id, is_top), task_id));
 CREATE TABLE board_data(board_id VARCHAR PRIMARY KEY, owner_id INT, name VARCHAR, description VARCHAR);
 CREATE TABLE comments(comment_id INT, task_id INT, user_id INT, content VARCHAR, timestamp BIGINT, PRIMARY KEY ((task_id), comment_id));
 

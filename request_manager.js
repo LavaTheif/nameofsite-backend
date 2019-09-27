@@ -49,7 +49,6 @@ async function getPostDat(req) {
 
         //resolve the data back to the parent function, returning it as a JSON object
         req.on('end', function () {
-
             if (body){
                 try {
                     resolve(JSON.parse(body));

@@ -10,6 +10,7 @@ exports.eval = async function(headers, post){
         let accClient = db_manager.getAccConnectionRead();
         let query = "SELECT * FROM account_data.user_boards WHERE user_id=?;";
         let usersBoards = await accClient.execute(query, [user_id], { prepare : true }).catch(e=>console.log(e));
+        usersBoards = usersBoards.rows;
 
         let boardClient = db_manager.getBoardConnectionRead();
 
@@ -19,14 +20,14 @@ exports.eval = async function(headers, post){
             let ret = {id: board_id, admin_level: board.admin_level};
             let board_query = "SELECT description, name, owner_id FROM board_data.board_data WHERE board_id=?;";
             let data = await boardClient.execute(board_query, [board_id], {prepare: true}).catch(e=>console.log(e));
-            data = data[0];
+            data = data.rows[0];
             if(!data)
                 continue;
             ret["name"] = data.name;
             ret["desc"] = data.description;
 
             let ownerData = await accClient.execute("SELECT username FROM account_data.accounts WHERE id=?;", [data.owner_id], { prepare : true }).catch(e=>console.log(e));
-            ownerData = ownerData[0];
+            ownerData = ownerData.rows[0];
             if(!ownerData)
                 ret["owner"] = "deleted.";
             else
