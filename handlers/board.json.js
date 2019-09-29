@@ -2,12 +2,14 @@ let db_manager = require('../db_manager/manager');
 
 exports.eval = async function(headers, post){
     return new Promise(async function (resolve) {
-        let board_id = post.board_id;
+        let board_id = post.board_id || "invalid-board";
         let user_id = 0;
         let returnDat = {id: board_id};//defaults;
 
         if(!board_id){
-            returnDat.exists = false;
+            returnDat.success = false;
+            returnDat.msg = "Board not found.";
+            returnDat.close = true;
             return resolve(returnDat);
         }
 
@@ -21,7 +23,9 @@ exports.eval = async function(headers, post){
         isInBoard = !!isInBoard.rows[0];
 
         if(!isInBoard){
-            returnDat.exists = false;
+            returnDat.success = false;
+            returnDat.close = true;
+            returnDat.msg = "Board not found or you are not a member of this board.";
             return resolve(returnDat);
         }
 
