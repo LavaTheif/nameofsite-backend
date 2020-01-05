@@ -14,6 +14,13 @@ exports.eval = async function(headers, post){
             return resolve(utils.noBoardError());
         }
 
+        let root_id = Number(post.root_id) || -1;
+        let parent_id = Number(post.parent_id) || -1;
+
+        if(utils.invalidInt(parent_id) || utils.invalidInt(root_id)){
+            return resolve(utils.catNoFound());
+        }
+
         //Checks if the user is in the board and gets their permission level (if applicable)
         let level = await utils.getPermissionLevel(user_id, board_id);
         if(level == null){
@@ -26,12 +33,18 @@ exports.eval = async function(headers, post){
             return utils.noPermError();
         }
 
+        //Check that the task with task_id = parent_id actually exists.
+        let validTask = await utils.isRealTask(board_id, parent_id === root_id, root_id, parent_id);
+        if(!validTask){
+            return resolve(utils.catNoFound());
+        }
+
         //Generate a new category id and insert it into the db.
         let boardClient = db_manager.getBoardConnectionWrite();
         let epoch = 1569799548533;
         let task_id = new Date().getTime()-epoch;
-        await boardClient.execute("INSERT INTO board_data.tasks(board_id, task_id, title, details, is_top, status, root_node_id) VALUES(?,?,?,?,?,?,?);",
-            [board_id,task_id, "unnamed category", "-", true, 0, task_id], { prepare : true }).catch(e=>console.log(e));
+        await boardClient.execute("INSERT INTO board_data.tasks(board_id, task_id, title, details, is_top, status, parent_id, root_node_id) VALUES(?,?,?,?,?,?,?,?);",
+            [board_id,task_id, "Unnamed Task", "-", false, 0, parent_id, root_id], { prepare : true }).catch(e=>console.log(e));
 
         //Close Connection
         db_manager.close(boardClient);

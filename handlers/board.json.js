@@ -1,44 +1,50 @@
+let utils = require('../commons');
 let db_manager = require('../db_manager/manager');
+
+//TODO
+//feels like all the API endpoints all have very similar code that could be written better.
+//Please check this out later.
+//Working on it now, might wanna double check what ive done when im sober.
+
 
 exports.eval = async function(headers, post){
     return new Promise(async function (resolve) {
+        //Return data
+        let returnDat = {};
+        //Get the board id & user ID
         let board_id = post.board_id || "invalid-board";
-        let user_id = 0;
-        let returnDat = {id: board_id};//defaults;
+        let user_id = post.uid;
 
-        if(!board_id){
-            returnDat.success = false;
-            returnDat.msg = "Board not found.";
-            returnDat.close = true;
-            return resolve(returnDat);
+        //Check it matches the ReGex for a correct board ID
+        if(!utils.isValidBoardID(board_id)){
+            return resolve(utils.noBoardError());
         }
 
-        //gets the tasks and data for board "post.board_id"
+        //gets the tasks and data for board board_id
 
-        let accClient = db_manager.getAccConnectionWrite();
+        //Checks if the user is in the board and gets their permission level (if applicable)
+        let level = await utils.getPermissionLevel(user_id, board_id);
+        if(level == null){
+            //The user was not in a board or otherwise lacked permissions for this action (if applicable)
+            return resolve(utils.noBoardError());
+        }
+
+        //Queries the tasks list for categories on this board.
         let boardClient = db_manager.getBoardConnectionWrite();
-
-        let isInBoard = await accClient.execute("SELECT admin_level FROM account_data.user_boards WHERE user_id=? AND board_id=?;", [user_id, board_id],
-            { prepare : true }).catch(e=>console.log(e));
-        isInBoard = !!isInBoard.rows[0];
-
-        if(!isInBoard){
-            returnDat.success = false;
-            returnDat.close = true;
-            returnDat.msg = "Board not found or you are not a member of this board.";
-            return resolve(returnDat);
-        }
-
         let tasks = await boardClient.execute("SELECT * FROM board_data.tasks WHERE is_top=true AND board_id=?",
             [board_id], { prepare : true }).catch(e=>console.log(e));
+        //Close Connection
+        db_manager.close(boardClient);
 
+
+        //Pass the returned database rows to the return data and mark exists.
+        //TODO Should I really be querying *?? This seems like a waste, please think about limiting it to just what is needed.
         tasks = tasks.rows;
         returnDat.exists = true;
         returnDat.tasks = tasks;
+        returnDat.id = board_id;
 
-        db_manager.close(accClient);
-        db_manager.close(boardClient);
-
+        //Resolve the data back to the client.
         resolve(returnDat);
     })
 }

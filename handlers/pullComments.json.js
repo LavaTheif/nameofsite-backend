@@ -14,31 +14,38 @@ exports.eval = async function(headers, post){
             return resolve(utils.noBoardError());
         }
 
+        let task_id = Number(post.task_id) || -1;
+
+        if(utils.invalidInt(task_id)){
+            return resolve(utils.catNoFound());
+        }
+
         //Checks if the user is in the board and gets their permission level (if applicable)
         let level = await utils.getPermissionLevel(user_id, board_id);
         if(level == null){
-            //The user was not in a board or otherwise lacked permissions for this action (if applicable)
+            //The user was not in a board
             return resolve(utils.noBoardError());
         }
 
-        if(level.admin_level <= 1){
-            //users permission level is too low.
-            return utils.noPermError();
-        }
+        // //Check that the task with task_id actually exists.
+        // let validTask = await utils.isRealTask(board_id, false, root_id, task_id);
+        // if(!validTask){
+        //     return resolve(utils.catNoFound());
+        // }
 
-        //Generate a new category id and insert it into the db.
-        let boardClient = db_manager.getBoardConnectionWrite();
-        let epoch = 1569799548533;
-        let task_id = new Date().getTime()-epoch;
-        await boardClient.execute("INSERT INTO board_data.tasks(board_id, task_id, title, details, is_top, status, root_node_id) VALUES(?,?,?,?,?,?,?);",
-            [board_id,task_id, "unnamed category", "-", true, 0, task_id], { prepare : true }).catch(e=>console.log(e));
+        let boardClient = db_manager.getBoardConnectionRead();
+
+        let commentData = await boardClient.execute(
+            "SELECT content, user_id, comment_id, timestamp " +
+            "FROM board_data.comments WHERE task_id=?",
+            [task_id], { prepare : true }).catch(e=>console.log(e));
 
         //Close Connection
         db_manager.close(boardClient);
 
         //return results to client.
         returnDat.id = board_id;
-        returnDat.task_id = task_id;
+        returnDat.comments = commentData.rows;
         returnDat.success = true;
         resolve(returnDat);
     })

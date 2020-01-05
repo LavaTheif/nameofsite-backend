@@ -2,6 +2,11 @@
 const manager = require('./request_manager');
 const utils = require('./utils');
 
+//TODO: Change to port 443 from 8079
+
+// let db_manager = require('./db_manager/manager');
+// db_manager.generate();
+
 //initialise logger API to keep track of errors and warnings.
 //This is open sourced at https://github.com/LavaTheif/LavaLogger/ and is written and maintained by me.
 const logger = require('./LavaLogger-master/loggerServerless.js').init("NameOfSite_server", "server-inst-0");
@@ -16,41 +21,75 @@ function init(){
 
         //Write headers
         //TODO: when pushing to production, change from *
-        res.writeHead(200, {'Content-Type': 'text/json',
-            'Access-Control-Allow-Origin':'*',
-            'Access-Control-Allow-Headers':'*'});
+        // res.setStatus(200);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Headers', '*');
 
+        //TODO: check for options request. (I think???)
         if(req.headers['access-control-request-headers'])//just a request header, don't return content.
             return res.end("");
 
         if(file === '/API/invalid.json'){
             //just a little easter egg I guess
-            return res.end(await utils.invalid('So, you wondered if you could request the internal error file?<br>' +
+            return res.end(await utils.invalid('So, you wondered if you could request the internal error file. ' +
                 'I like your style.'));
         }
 
-        //TODO: here is where the authentication needs to be done.
-        //TODO: if a user is logging in, then allow them to not be authenticated yet.
-        //TODO: this should be sent in an Authentication header, and not with the payload body
-        if(false){//This is when a users session is invalid.
-            return res.end(await utils.invalid('Invalid Session (401)'));
-        }
+        //This will check if the user is requesting /API/*.json
+        if(file.match(/^\/API\/[A-Za-z]+\.json$/)){
+            //only POST
+            if (req.method === 'POST') {
+                //evaluate and send the payload
+                res.setHeader('Content-Type', 'text/json');
+                let data = await manager.exec(file, logger, req);
+                if (typeof data === typeof {})
+                    data = JSON.stringify(data);
+                return res.end(data);
+            }
+        }else if(file.match(/^\/images\/.*$/)){
+            //Check if the user is requesting /images/*
+            //only GET
+            if (req.method === 'GET') {
+                const fs = require('fs');
+                // function to encode file data to base64 encoded string
+                function base64_encode(file) {
+                    // read binary data
+                    let img = fs.readFileSync(file);
+                    // convert binary data to base64 encoded string
+                    return new Buffer.from(img).toString('base64');
+                    //TODO: Would save to DB here
+                }
 
-        //This will check that the user is requesting /API/*.json
-        if(!file.match(/^\/API\/[A-Za-z]+\.json$/)){
-            console.log("User requested invalid file.");
-            return res.end(await utils.invalid('Malformed Request (#000)'));
-        }
+                let image = base64_encode('/home/charlie/Documents/'+file.replace('/images/',""));
+                res.setHeader('Content-Type', 'image/png');
+                return res.end(Buffer.from(image, 'base64'));
+            }
+        }else if(file.match(/^\/upload\/$/)){
+            //Check if the user is requesting /images/*
+            //only POST
+            if (req.method === 'POST') {
+                const fs = require('fs');
+                // function to encode file data to base64 encoded string
+                function base64_encode(file) {
+                    // read binary data
+                    let img = fs.readFileSync(file);
+                    // convert binary data to base64 encoded string
+                    return new Buffer.from(img).toString('base64');
+                    //TODO: Would save to DB here
+                }
 
-        // evaluate and send the payload
-        let data = await manager.exec(file, logger, req);
-        if(typeof data === typeof {})
-            data = JSON.stringify(data);
-        res.end(data);
+                let image = base64_encode('/home/charlie/Documents/meme.png');
+                res.setHeader('Content-Type', 'image/png');
+                return res.end(Buffer.from(image, 'base64'));
+            }
+        }
+        console.log("User requested invalid file: "+file);
+        return res.end(await utils.invalid('404'));
+
     };
 
     var server = http.createServer();
-    //TODO: server.setSecure(credentials);
+    //TODO: server.setSecure(credentials); //<-- afaik ssl
     server.addListener("request", handler);
     server.listen(8079);
 

@@ -1,4 +1,5 @@
 const utils = require('./utils');
+const commons = require('./commons');
 
 exports.exec = async function (file, logger, req) {
     return new Promise(async function (resolve) {
@@ -7,21 +8,61 @@ exports.exec = async function (file, logger, req) {
         if (req.method === 'POST') {
             //load all the post data into the postDat variable as a JSON object
             postDat = await getPostDat(req);
+        }else{
+            //This action requires post data.
+            //None was provided. Return a malformed request error.
+            return resolve(commons.noPost());
         }
-
         //this is the file name the user requested
         let fileName = file.replace("/API/","");
+
+        //signup and login are up here as they require no authentication
+        if(fileName==="login.json"){
+            return resolve(await require('./handlers/login.json').eval(req.headers, postDat));
+        }else if(fileName==="signup.json"){
+            return resolve(await require('./handlers/signup.json').eval(req.headers, postDat));
+        }
+
+        //get the users JWT and Refresh tokens
+        //should be sent in headers, and not with the payload body
+        let token = req.headers['jwt'];
+        let refresh = req.headers['refresh'];
+        let newToken = null;
+
+        //validate their JWT
+        let validation = await commons.validateJWT(token);
+
+        // here is where the authentication is checked.
+        if(validation.error){
+            //User has supplied an invalid token.
+            //Attempt to generate a new token with the refresh token
+            newToken = await commons.issueNewToken(refresh);
+            if(newToken.error){
+                //invalid refresh token.
+                //User must log in to generate a new token
+                return resolve(newToken);
+            }else{
+                //User supplied a valid refresh token
+                //therefore it has generated a new token
+                postDat.uid = newToken.uid;
+                //set the newToken variable to this token;
+                newToken = newToken.token;
+            }
+        }else{
+            //Valid token, set the users id to the one from the token.
+            postDat.uid = validation.body.uid;
+        }
+
         try {
-            //TODO: optimise this so we don't use FS for each request
-            //Maybe require all the handlers, store in an array, and import the file locally upon init?
-            //load the default content for this file
-/*
-            defaults = fs.readFileSync('./presets/' + fileName);
-*/
-            //resolve the defaults back to the parent function
-            //TODO: load data into the defaults, and return custom data.
-            let custom = await require('./handlers/'+fileName).eval(req.headers, postDat);
-            resolve(custom);
+            //Evaluate the users request and store the data in the 'evalData' variable
+            let evalData = await require('./handlers/'+fileName).eval(req.headers, postDat);
+            if(newToken){
+                //If we have a new token for the user
+                //then we add it to the data that will be returned here
+                evalData['jwt'] = newToken;
+            }
+            //resolve back to client.
+            return resolve(evalData);
 
         }catch (error){
             //user requested an invalid file, therefore make a log of it.
@@ -32,7 +73,7 @@ exports.exec = async function (file, logger, req) {
             return resolve(await utils.invalid("Malformed Request #001"));
         }
     })
-}
+};
 
 //gets the content of the post data.
 async function getPostDat(req) {

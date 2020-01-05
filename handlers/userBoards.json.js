@@ -1,11 +1,12 @@
-// let defaults = require('../presets/userBoards.json');
+let utils = require('../commons');
 let db_manager = require('../db_manager/manager');
 
 exports.eval = async function(headers, post){
     return new Promise(async function(resolve) {
+        //Return data
         let returnDat = {};
-
-        let user_id = 0;
+        //Get user ID
+        let user_id = post.uid;
 
         let accClient = db_manager.getAccConnectionRead();
         let query = "SELECT * FROM account_data.user_boards WHERE user_id=?;";
@@ -26,13 +27,6 @@ exports.eval = async function(headers, post){
             ret["name"] = data.name;
             ret["desc"] = data.description;
 
-            let ownerData = await accClient.execute("SELECT username FROM account_data.accounts WHERE id=?;", [data.owner_id], { prepare : true }).catch(e=>console.log(e));
-            ownerData = ownerData.rows[0];
-            if(!ownerData)
-                ret["owner"] = "deleted.";
-            else
-                ret["owner"] = ownerData.username;
-
             returnDat[i+1] = ret;
         }
 
@@ -41,4 +35,14 @@ exports.eval = async function(headers, post){
 
         resolve(returnDat);
     })
-}
+};
+
+/** @DEPRECATED_CODE
+ let ownerData = await accClient.execute("SELECT username FROM account_data.accounts WHERE id=?;", [data.owner_id], { prepare : true }).catch(e=>console.log(e));
+ ownerData = ownerData.rows[0];
+ if(!ownerData)
+ ret["owner"] = "deleted.";
+ else
+ ret["owner"] = ownerData.username;
+
+*/
