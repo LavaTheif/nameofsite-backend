@@ -1,0 +1,10 @@
+{
+  "db_type":"cassandra",
+  "username":"",
+  "password":"",
+  "ip":"localhost",
+  "port":"9042",
+  "schema":"logs",
+
+  "server_port":2222
+}
