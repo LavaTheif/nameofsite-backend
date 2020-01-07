@@ -28,7 +28,7 @@ exports.eval = async function(headers, post){
         }
 
         let boardClient = db_manager.getBoardConnectionWrite();
-        let board_query = "SELECT details, title, is_top, task_id, status, parent_id FROM board_data.tasks WHERE board_id=? AND root_node_id=? AND is_top IN (true, false);";
+        let board_query = "SELECT details, title, is_top, task_id, status, parent_id, due_date FROM board_data.tasks WHERE board_id=? AND root_node_id=? AND is_top IN (true, false);";
         let data = await boardClient.execute(board_query, [board_id, task_id], {prepare: true}).catch(e=>console.log(e));
         db_manager.close(boardClient);
 

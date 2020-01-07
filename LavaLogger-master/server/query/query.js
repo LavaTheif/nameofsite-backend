@@ -15,7 +15,7 @@ exports.run = async function (options, c){
     if(!config){//check if config is loaded, if not, load it in.
         if(!c) {
             const fs = require('fs');
-            let rawdata = fs.readFileSync('../config.json');
+            let rawdata = fs.readFileSync('../../../config.json');
             config = JSON.parse(rawdata);
         }else{
             config = c;

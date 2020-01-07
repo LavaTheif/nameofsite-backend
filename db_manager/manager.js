@@ -5,6 +5,9 @@ let port = 9042;
 
 //TODO: Create an account with only read or write access to only board or account data
 
+
+// let settingsBoard = require('./initBoardSettings').init({schema: "settings"});
+
 /*
       user_id: '6c78c51a-3b75-4101-9b18-632dfb06dc78',
       board_id: 'eaaa5e12',
@@ -61,3 +64,7 @@ exports.getAccConnectionWrite = function(){
 exports.close = function(client){
     client.shutdown();
 }
+
+// exports.getSettingsBoard = function() {
+//     return settingsBoard;
+// }

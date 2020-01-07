@@ -1,8 +1,8 @@
 {
   "db_type":"cassandra",
-  "username":"cassandra",
-  "password":"cassandra",
-  "ip":"192.168.0.15",
+  "username":"",
+  "password":"",
+  "ip":"localhost",
   "port":"9042",
   "schema":"logs",
 

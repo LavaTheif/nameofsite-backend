@@ -9,7 +9,7 @@ exports.eval = async function(headers, post){
         let board_id = post.board_id || "invalid-board";
         let task_id = Number(post.task_id);
         let root_id = Number(post.root_id);
-        let status = Number(post.status);
+        let date = Number(post.date);
         let user_id = post.uid;
 
         //Check it matches the ReGex for a correct board ID
@@ -17,12 +17,12 @@ exports.eval = async function(headers, post){
             return resolve(utils.noBoardError());
         }
 
-        if(utils.invalidInt(task_id) || utils.invalidInt(root_id) || utils.invalidInt(status)){
+        if(utils.invalidInt(task_id) || utils.invalidInt(root_id) || utils.invalidInt(date)){
             return resolve(utils.catNoFound());
         }
 
-        if(status < 0 || status >= 3){
-            return resolve({success: false, msg:"Invalid input."});
+        if(date < 0){
+            return resolve({success: false, msg:"Invalid Date."});
         }
 
         //Checks if the user is in the board and gets their permission level (if applicable)
@@ -46,12 +46,12 @@ exports.eval = async function(headers, post){
 
 
         let boardClient = db_manager.getBoardConnectionWrite();
-        await boardClient.execute("UPDATE board_data.tasks SET status=? WHERE board_id=? AND root_node_id=? AND task_id=? AND is_top=?;",
-            [status, board_id, root_id, task_id, task_id===root_id], { prepare : true }).catch(e=>console.log(e));
+        await boardClient.execute("UPDATE board_data.tasks SET due_date=? WHERE board_id=? AND root_node_id=? AND task_id=? AND is_top=?;",
+            [date, board_id, root_id, task_id, task_id===root_id], { prepare : true }).catch(e=>console.log(e));
 
         db_manager.close(boardClient);
         returnDat.id = board_id;
-        returnDat.status = status;
+        returnDat.date = date;
         resolve(returnDat);
     })
 }

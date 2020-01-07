@@ -7,6 +7,7 @@ USE account_data;
 CREATE TABLE accounts(id VARCHAR PRIMARY KEY, username VARCHAR, last_login BIGINT, signed_up BIGINT, pwd VARCHAR);
 CREATE TABLE user_lookup(username VARCHAR PRIMARY KEY, id VARCHAR);
 CREATE TABLE user_boards(user_id VARCHAR, board_id VARCHAR, admin_level INT, PRIMARY KEY ((user_id), board_id));
+CREATE TABLE join_info(
 
 //TODO: Maybe make a new table to log users join times, leave reasons etc
 
